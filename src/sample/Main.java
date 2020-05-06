@@ -1,9 +1,9 @@
 package sample;
 
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
+//import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
-import javafx.scene.Parent;
+//import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.layout.VBox;
@@ -31,7 +31,7 @@ public class Main extends Application {
             NewGame.startNewGame(window);
         });
 
-        Button newGame = new Button("New Game");
+        Button newGame = new Button("Single Game");
         newGame.setOnAction(e->{
             NewGame.startNewGame(window);
         });
