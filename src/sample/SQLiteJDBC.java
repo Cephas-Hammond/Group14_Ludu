@@ -14,6 +14,7 @@ public class SQLiteJDBC {
    private int games;
    private int  wins;
    private int losses;
+   private int player;
 
    //SETTERS AND GETTERS
    public String getId() {
@@ -36,6 +37,9 @@ public class SQLiteJDBC {
       return userName;
    }
 
+   public int getPlayer(){
+      return player;
+   }
 
    //CONSTRUCTOR
    public SQLiteJDBC(String name) {
