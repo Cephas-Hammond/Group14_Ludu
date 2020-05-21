@@ -1,5 +1,6 @@
 package sample;
 
+import com.sun.xml.internal.ws.api.ResourceLoader;
 import javafx.application.Application;
 //import javafx.fxml.FXMLLoader;
 import javafx.event.Event;
@@ -12,20 +13,28 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import sample.Server.MultiPLay;
+import javafx.stage.StageStyle;
+import sample.server.MultiPLayerConnect;
+import sample.server.SQLiteJDBC;
+
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.time.Duration;
+import java.util.Timer;
 
 public class Main extends Application {
 
-    private Stage userNameRequest;
     static Stage window;
     private String userName;
-    private SQLiteJDBC dbPlayer;
+    private SQLiteJDBC playerDB;
 
     @Override
     public void start(Stage primaryStage) throws Exception{
@@ -35,61 +44,119 @@ public class Main extends Application {
         primaryStage.show();*/
 
         window = primaryStage;
-        /*window.setOnCloseRequest(e->{
-            dbPlayer.delete();
-        });*/
+        window.setOnCloseRequest(e-> playerDB.delete());
 
         window.setTitle("Ludu 1.0");
 
         VBox layout = new VBox(10);
-        Button multiPlay = new Button("Multiplayer");
-        multiPlay.setOnAction(e->{
-            if(MultiPLay.display(userName))NewGame.startNewGame(dbPlayer);
-        });
 
         //WELCOME TEXT
-        Label welcomeText = new Label();
+        Text welcomeText = new Text();
+        setFont(welcomeText);
 
-        Button newGame = new Button("Single Game");
-        newGame.setOnAction(e->{
-            NewGame.startNewGame(dbPlayer);
+        //NEW GAME BUTTON
+        //System.out.println(getClass().getClassLoader().getResourceAsStream("newGame1.png"));
+        Image newGameImage = new Image(getClass().getClassLoader().getResourceAsStream("newGame1.png"));
+        //Image newGameImage = new Image(new FileInputStream("src\\sample\\resources\\newGame1.png"));
+        ImageView newGameIcon = new ImageView(newGameImage);
+
+        Button newGame = new Button("Single Game",newGameIcon);
+        newGame.setOnAction(e-> NewGame.startNewGame(playerDB));
+        newGame.setFont(new Font("Rockwell Condensed",20));
+
+        //MULTIPLAY BUTTON
+        //Image multiplayer = new Image(new FileInputStream("src\\sample\\resources\\multiplay1.png"));
+        Image multiplayer = new Image(getClass().getClassLoader().getResourceAsStream("multiplay1.png"));
+        ImageView multiplayerIcon = new ImageView(multiplayer);
+
+        Button multiPlay = new Button("Multiplayer",multiplayerIcon);
+        multiPlay.setOnAction(e->{
+            if(MultiPLayerConnect.display(userName, playerDB.getId()))NewGame.startNewGame(playerDB);
         });
+        multiPlay.setFont(new Font("Rockwell Condensed",20));
 
-        Button stats = new Button("Statistics");
-        stats.setOnAction(e->Stat.display(window,dbPlayer));
+        //PROFILE BUTTON
+        //Image profile = new Image(new FileInputStream("src\\sample\\resources\\profile1.png"));
+        Image profile = new Image(getClass().getClassLoader().getResourceAsStream("profile1.png"));
+        ImageView profileIcon = new ImageView(profile);
+
+        Button profileBtn = new Button("Profile",profileIcon);
+        profileBtn.setOnAction(e->Stat.display(window, playerDB));
+        profileBtn.setFont(new Font("Rockwell Condensed",20));
 
 
-        layout.getChildren().addAll(multiPlay,newGame,stats);
-        layout.setAlignment(Pos.CENTER);
+        layout.getChildren().addAll(newGame,multiPlay,profileBtn);
+        layout.setAlignment(Pos.BOTTOM_CENTER);
+        layout.setPadding(new Insets(0,0,200,0));
 
         BorderPane withWelcomeText = new BorderPane();
-        withWelcomeText.setPadding(new Insets(5,0,0,0));
-        withWelcomeText.setTop(welcomeText);
+        withWelcomeText.setPadding(new Insets(10,10,10,10));
+        withWelcomeText.setBottom(welcomeText);
         withWelcomeText.setCenter(layout);
 
         Scene scene1 = new Scene(withWelcomeText,800,900);
+        setBackground(withWelcomeText);//SETTING BACKGROUND
+
+        intro(welcomeText);
+
         window.setScene(scene1);
         window.show();
 
-        requestUserName(welcomeText);
-        dbPlayer = new SQLiteJDBC(userName);
+        //requestUserName(welcomeText);
+        playerDB = new SQLiteJDBC(userName);
     }
 
-    private void requestUserName(Label welcomeText) {
-        //USERNAME REQUEST
-        userNameRequest = new Stage();
+    private void setBackground(BorderPane layout) throws FileNotFoundException {
+        //Image image = new Image(new FileInputStream("src\\sample\\resources\\menu_back1.png"));
+        Image image = new Image(getClass().getClassLoader().getResourceAsStream("menu_back1.png"));
+        ImageView menuBack = new ImageView(image);
+
+        BackgroundImage backgroundimage = new BackgroundImage(image,
+                BackgroundRepeat.NO_REPEAT,
+                BackgroundRepeat.NO_REPEAT,
+                BackgroundPosition.DEFAULT,
+                BackgroundSize.DEFAULT);
+
+        // create Background
+        Background background = new Background(backgroundimage);
+        layout.setBackground(background);
+    }
+
+    private void intro(Text welcomeText) throws FileNotFoundException {
+
+        //Image image = new Image(new FileInputStream("src\\sample\\resources\\enterName2.png"));
+        Image image = new Image(getClass().getClassLoader().getResourceAsStream("enterName2.png"));
+        ImageView introImage = new ImageView(image);
+
+        VBox testLayout = new VBox(5);
+        testLayout.setAlignment(Pos.CENTER);
+        Stage stage = new Stage();
+
+        BackgroundFill background_fill = new BackgroundFill(Color.color(0.3,0.3,0.7,0.5),
+                CornerRadii.EMPTY, Insets.EMPTY);
+
+        // create Background
+        Background background = new Background(background_fill);
+
+        HBox subLayout = new HBox(5);
+        subLayout.setAlignment(Pos.CENTER);
+
         Label userLabel = new Label("Username");
-        userLabel.setFont(new Font("Arial",15));
+        userLabel.setFont(new Font("Rockwell Condensed",25));
 
         TextField userNameField = new TextField();
         userNameField.setPromptText("Enter username");
+        userNameField.setFont(new Font("Rockwell",15));
+        //userNameField.setBackground();
 
-        Button accept = new Button("Ok");
+
+        Button accept = new Button("OK");
+        accept.setFont(new Font("Rockwell Condensed",15));
         accept.setDisable(true);
         accept.setOnAction(e->{
             if(!userNameField.getText().equals("")){
                 userName = userNameField.getText();
-                userNameRequest.close();
+                stage.close();
                 welcomeText.setText("Welcome, "+userName);
             }
         });
@@ -97,27 +164,26 @@ public class Main extends Application {
             if (e.getCode().getName().equals("Enter") &&
                     !userNameField.getText().equals("")){
                 userName = userNameField.getText();
-                userNameRequest.close();
+                stage.close();
                 welcomeText.setText("Welcome, "+userName);
             }
             if(!userNameField.getText().equals(""))accept.setDisable(false);
         });
 
-        GridPane userNameLayout = new GridPane();
-        GridPane.setConstraints(userLabel,0,0,2,1, HPos.CENTER, VPos.CENTER);
-        GridPane.setConstraints(userNameField,0,1);
-        GridPane.setConstraints(accept,0,2,2,1, HPos.CENTER, VPos.CENTER);
-        userNameLayout.setPadding(new Insets(10,5,0,5));
-        userNameLayout.setVgap(5);
-        userNameLayout.getChildren().addAll(userLabel,userNameField,accept);
+        subLayout.getChildren().addAll(userLabel,userNameField,accept);
+        testLayout.setBackground(background);
+        testLayout.getChildren().addAll(introImage,subLayout);
+        testLayout.setPadding(new Insets(10));
 
-        //UNCOMMENT CODE BELOW
-        userNameRequest.initModality(Modality.APPLICATION_MODAL);
-        userNameRequest.setOnCloseRequest(Event::consume);
-        userNameRequest.setScene(new Scene(userNameLayout));
-        userNameRequest.showAndWait();
+        stage.initStyle(StageStyle.TRANSPARENT);
+        stage.setScene(new Scene(testLayout));
+        stage.showAndWait();
     }
 
+    public static void setFont(Text text){
+        text.setFont(new Font("Rockwell Condensed",25));
+        text.setFill(Color.WHITESMOKE);
+    }
 
     public static void main(String[] args) {
         launch(args);

@@ -1,4 +1,4 @@
-package sample.Server;
+package sample.server;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -12,15 +12,17 @@ class ClientHandler implements Runnable
     private String name;
     final DataInputStream dis;
     final DataOutputStream dos;
-    private Socket s;
-    boolean isloggedin;
+    private final Socket s;
+    boolean isLoggedIn;
+    boolean isReady;
 
     // constructor
     public ClientHandler(Socket s) throws IOException {
         this.s = s;
-        this.isloggedin=true;
+        this.isLoggedIn =true;
+        this.isReady = false;
         this.name="null";
-        // obtain input and output streams
+        //OBTAIN INPUT AND OUTPUT STREAMS
         this.dis = new DataInputStream(s.getInputStream());
         this.dos = new DataOutputStream(s.getOutputStream());
     }
@@ -29,7 +31,7 @@ class ClientHandler implements Runnable
     public void run() {
 
         String received;
-        while (!s.isClosed())//true)
+        while (!s.isClosed())
         {
             try
             {
@@ -44,47 +46,92 @@ class ClientHandler implements Runnable
                 String MsgToSend = st.nextToken();
                 String sender = st.nextToken();
 
-                //sets name if name has not been set
+                //SETS NAME OF NEW PLAYER
                 if(name.equals("null")){
                     name = sender;
                     System.out.println("Username Acquired as: "+name);
-					continue;
                 }
-
-
-                if(MsgToSend.equals("logout")){
-                    this.isloggedin=false;
-                    this.s.close();
-                    break;
+                else if(MsgToSend.equals("findPlayers")){
+                    System.out.println("Searching for Players");
+                    alertAllPlayers();
                 }
+                else if(MsgToSend.equals("ready")){
+                    System.out.println("Checking Readiness...");
+                    this.isReady = true;
+                    checkReady();
+                }
+                // SEND TO ALL CLIENTS EXCEPT SENDER
+                else{
+                    for (ClientHandler client : Server.clients) {
+                        if (!client.name.equals(sender) && client.isLoggedIn) {
+                            client.dos.writeUTF(received);
+                        }
+                    }
 
-                // search for the recipient in the connected devices list.
-                // ar is the vector storing client of active users
-                for (ClientHandler client : Server.clients)
-                {
-                    // if the recipient is found, write on its
-                    // output stream
-                    if (!client.name.equals(sender) && client.isloggedin)
-                    {
-                        client.dos.writeUTF(received);
-                        //break;
+                    if (MsgToSend.equals("6")){
+                        Server.clients.get(Server.turnIndex).dos.writeUTF("yourTurn#"+sender);
+                    }
+                    else{
+                        Server.turnIndex = (Server.turnIndex +1)%Server.clients.size();
+                        Server.clients.get(Server.turnIndex).dos.writeUTF("yourTurn#"+sender);
                     }
                 }
             } catch (IOException e) {
+                //I/O STREAM TO PLAYER IS HITS DEAD END (PLAYER NOT RESPONDING)
                 //e.printStackTrace();
-                this.isloggedin = false;
+                this.isLoggedIn = false;
                 Server.clients.remove(this);
                 break;
             }
         }
         try
         {
-            // closing resources
+            // CLOSING RESOURCES
             this.dis.close();
             this.dos.close();
-
+            System.out.println(this.name + " has disconnected.");
         }catch(IOException e){
             e.printStackTrace();
+        }
+    }
+
+    private void alertAllPlayers() {
+        //GET NAMES OF ALL USERS
+        StringBuilder playerNames = new StringBuilder();
+        int size = Server.clients.size();
+        for (int i=0;i<size;i++) {
+            playerNames.append(Server.clients.get(i).name);
+            if(i<(size-1)) playerNames.append(",");
+        }
+        //SEND NAMES TO ALL PLAYERS
+        for (ClientHandler client : Server.clients) {
+            try {
+                client.dos.writeUTF(playerNames+"#"+this.name);
+            } catch (IOException ioException) {
+                ioException.printStackTrace();
+            }
+        }
+    }
+
+    private void checkReady() {
+        boolean ready = true;
+        for (ClientHandler client : Server.clients) {
+            if(!client.isReady){
+                ready = false;
+                break;
+            }
+        }
+        try {
+            if (ready) {
+                //SEND START TO ALL PLAYERS
+                for (ClientHandler client : Server.clients) {
+
+                    client.dos.writeUTF("start#" + this.name);
+                }
+                Server.clients.get(Server.turnIndex).dos.writeUTF("yourTurn#"+this.name);
+            }
+        }catch (IOException ioException) {
+            ioException.printStackTrace();
         }
     }
 }

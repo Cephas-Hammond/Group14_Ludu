@@ -1,2 +1,4 @@
 .idea
 proj
+src/sample/Server/*.class
+src/META-INF/MANIFEST.MF

@@ -2,6 +2,7 @@ package sample;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
@@ -10,44 +11,52 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
-
+import sample.server.ReadMessage;
+import sample.server.SQLiteJDBC;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-
 import java.io.IOException;
 import java.net.Socket;
 import java.util.*;
 
 public class NewGame {
 
-    private static Socket s = null;
     private static DataInputStream dis;
     private static DataOutputStream dos;
-    private static String msg,receivedMsg;
-    private static SQLiteJDBC dbPlayer;
+    private static String socketName;
+
     private static Text play;
     private static int dice;
+    //private static Button btn; //#serverside_change
+    private static Button[] btn = new Button[2];
 
-    
+    private static double[] x;
+    private static double[] y;
+    //private static int z=0;
 
-    public static void startNewGame(SQLiteJDBC db){
-        Scene prevScene = Main.window.getScene();
 
-        dbPlayer=db;// initial db
-        dbPlayer.hasPlayed();
+    public static void startNewGame(SQLiteJDBC playerDB){
+        playerDB.hasPlayed();
+		Scene prevScene = Main.window.getScene();
+        
         Label text = new Label("This is a new Game");
 
-    
+        
         play = new Text();
-
-        BorderPane root = new BorderPane();//main layout pane -> Border pane
+        /*btn = new Button("Toss");
+        btn.setOnAction(e->{
+            rollDice();
+            });*/
+			
+		BorderPane root = new BorderPane();//main layout pane -> Border pane
         root.setPadding(new Insets(5));
         MenuBar menubar = new MenuBar();//create a menu bar
         Menu FileMenu = new Menu("Menu");
         MenuItem New=new MenuItem("new");
         New.setOnAction(e->{
-            NewGame.startNewGame(dbPlayer);//starts a  new game
+            NewGame.startNewGame(playerDB);//starts a  new game
         });
         MenuItem Save=new MenuItem("Save");
 
@@ -61,7 +70,6 @@ public class NewGame {
         root.setTop(menubar);
 
         //CHANGES
-        Button[] btn = new Button[2];
         btn[0] = new Button("P1: Toss");//for Player 1 toss
         btn[1] = new Button("P2: Toss");// for player 2 toss
         btn[1].setDisable(true);//disabled for player 1 to toss first
@@ -88,8 +96,12 @@ public class NewGame {
 
         HBox lay = new HBox(5);//Hbox layout for toss buttons
         lay.setAlignment(Pos.CENTER);
-        lay.getChildren().addAll(btn[0],btn[1]);//adds buttons to horizontal box
-        
+        lay.getChildren().add(btn[0]);//adds buttons to horizontal box
+
+        if(socketName==null){
+            lay.getChildren().add(btn[1]);//adds buttons to horizontal box
+        }
+
         VBox layout = new VBox(10);//vbox for arrangement
         layout.getChildren().addAll(text,lay,play);
         layout.setPrefHeight(300);
@@ -98,14 +110,28 @@ public class NewGame {
 
         //END OF CHANGES
         
-        Scene scene = new Scene(root,800,800);
+
+
+        Scene scene = new Scene(root,800,900);
+        scene.setOnMouseClicked(e -> {
+            System.out.println(e.getX()+","+e.getY());
+        });
 
         Main.window.setScene(scene);
+        if(socketName !=null){
+            Alert.waitPlayers(socketName,Main.window.getX(),Main.window.getY());
+            sendMessage("findPlayers");
+        }
+
     }
-    private static void rollDice()  {
+    private static void rollDice(){
     Random rand = new Random();
-        dice = rand.nextInt(6) + 1;
+        dice = rand.nextInt(7);
+
+        if(socketName!=null)btn[0].setDisable(true);//#serverside_change
+
         switch(dice){
+            case 0:
             case 1:
                 play.setText("1");
                 break;
@@ -122,14 +148,20 @@ public class NewGame {
                 play.setText("5");
                 break;
             case 6:
+                //btn.setDisable(false);
                 play.setText("6");
                 break;
         }
-        msg = play.getText();//sets the msg to display in the UI
+        if(socketName!=null)sendMessage(play.getText());
     }
-    
+    public static int getDice(){
+        return dice;
+    }
 
-    public static GridPane draw(){// returns the main ludo  as a Gridpane
+    public static Button getBtn() {return btn[0]; }
+	
+	
+	public static GridPane draw(){// returns the main ludo  as a Gridpane
 
         GridPane board = new GridPane();
         board.setPadding(new Insets(30, 10, 10, 10));
@@ -229,14 +261,23 @@ public class NewGame {
 
         return board;
     }
-    
+	
+	
+	
+	
+	
+	
+	
+	//#serverside_change
+
+    public static Text getPlay() {return play;}
     // ONLINE MULTIPLAYER THREADS
     // DO NOT TOUCH
 
     //SET SOCKET
-    public static void setSocket(Socket socket, String name) {
-        s = socket;
-        dbPlayer = new SQLiteJDBC(name);
+    public static void setSocket(Socket s, String name) {
+        socketName = name;
+
         try {
             // obtaining input and out streams
             dis = new DataInputStream(s.getInputStream());
@@ -244,97 +285,50 @@ public class NewGame {
             Main.window.setOnCloseRequest(e->{
                 Main.window.getOnCloseRequest();
                 try {
+                    //TELL OTHER USERS OF EXIT
+                    sendMessage("out");
+                    Thread.sleep(500);
                     s.close();
                     Thread.yield();
-                    Thread.yield();
-                } catch (IOException ioException) {
-                    //ioException.printStackTrace();
+                } catch (IOException | InterruptedException ioException) {
+                    ioException.printStackTrace();
                     Main.window.close();
                 }
             });
+
+            //Thread sendMsgThread = new Thread(new SendMessage());
+            Thread readMsgThread = new Thread(new ReadMessage(s,dis));
+
             //Start threads here
-            sendMessage.start();
-            readMessage.start();
+            //sendMessage.start();
+            //sendMsgThread.start();
+
+            //NO THREAD FOR SENDING MESSAGES
+            sendMessage(socketName);
+
+            //readMessage.start();
+            readMsgThread.start();
         }
         catch (IOException e) {
             e.printStackTrace();
         }
     }
-    // private static void createSwingContent(final SwingNode swingNode){
-    //     SwingUtilities.invokeLater(new Runnable() {
-    //         @Override
-    //         public void run() {
-    //             swingNode.setContent(new Painter());
-    //         }
-    //     });
-    // }
 
-    // MESSAGE SEND THREAD
-    static Thread sendMessage = new Thread(new Runnable()
-    {
-        @Override
-        public void run() {
-            msg = dbPlayer.getUserName();
-            while (!s.isClosed()) {
-
-                // read the message to deliver.
-                if (!msg.equals("")) {
-                    msg = msg + "#" + dbPlayer.getUserName();
-
-                    try {
-                        // write on the output stream
-                        dos.writeUTF(msg);
-                    } catch (IOException e) {
-                        //IN CASE CONNECTION IS LOST
-                        /*VBox layout = new VBox(new Text("Connection to Server lost!!"));
-                        layout.setPadding(new Insets(10,5,10,5));
-                        layout.setAlignment(Pos.CENTER);
-                        Stage alert = new Stage();
-                        alert.setScene(new Scene(layout));
-                        alert.initModality(Modality.APPLICATION_MODAL);
-                        alert.showAndWait();*/
-                        e.printStackTrace();//comment line out
-                        break;
-                    }
-                    msg = "";
-                }
-                //if(readMessage.isInterrupted()) readMessage.start();
+    public  static void sendMessage(String msg){
+        if (!msg.equals("")) {
+            //setMsg(getMsg()+ "#" +getSocketName());
+            msg+="#"+socketName;
+            try {
+                // write on the output stream
+                dos.writeUTF(msg);
+            } catch (IOException e) {
+                //IN CASE CONNECTION IS LOST
+                Alert.display("Connection to Server Lost...");
+                e.printStackTrace();//comment line out
             }
-            Thread.yield();
-        }
-    });
-
-    // MESSAGE READ THREAD
-    static Thread readMessage = new Thread(new Runnable()
-    {
-        @Override
-        public void run() {
-
-            while (!s.isClosed()) {
-                try {
-                    // read the message sent to this client
-                    receivedMsg = dis.readUTF();
-                    StringTokenizer st = new StringTokenizer(receivedMsg, "#");
-                    String msgReceived = st.nextToken();
-                    String sender = st.nextToken();
-                    getInt(msgReceived);//Received die output
-                    readMessage.interrupt();
-                } catch (IOException e) {
-                    Thread.yield();
-                    break;
-                    //e.printStackTrace();
-                }
-                if(sendMessage.isInterrupted()) sendMessage.start();
-            }
-        }
-    });
-    static void getInt(String a){
-        int val;
-        try {
-            val =  Integer.parseInt(a);
-            play.setText(""+val);
-        } catch (NumberFormatException e) {
-            //e.printStackTrace();
         }
     }
 }
+
+
+

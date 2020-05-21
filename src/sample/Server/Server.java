@@ -1,4 +1,4 @@
-package sample.Server;
+package sample.server;
 // Java implementation of Server side
 // It contains two classes : Server and ClientHandler 
 // Save file as Server.java 
@@ -14,6 +14,7 @@ public class Server
 
 	// Vector to store active clients 
 	static Vector<ClientHandler> clients = new Vector<>();
+	static int turnIndex=0;
 
 	public static void main(String[] args) throws IOException 
 	{ 
@@ -25,8 +26,7 @@ public class Server
 		
 		Socket s; 
 		
-		// running infinite loop for getting 
-		// client request 
+		//RUNNING LOOP FOR GETTING CLIENT CLIENT REQUESTS
 		for(int i=0;i<N_USERS;i++)
 		{ 
 			// Accept the incoming request 
