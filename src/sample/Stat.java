@@ -107,7 +107,7 @@ public class Stat {
 
     private static void setBackground(GridPane layout) {
         //Image image = new Image(new FileInputStream("src\\sample\\resources\\prof_back.png"));
-        Image image = new Image(ResourceLoader.class.getClassLoader().getResourceAsStream("prof_back.png"));
+        Image image = new Image(Stat.class.getClassLoader().getResourceAsStream("prof_back.png"));
         ImageView menuBack = new ImageView(image);
 
         BackgroundImage backgroundimage = new BackgroundImage(image,

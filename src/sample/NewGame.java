@@ -5,10 +5,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
@@ -32,10 +29,6 @@ public class NewGame {
     //private static Button btn; //#serverside_change
     private static Button[] btn = new Button[2];
 
-    private static double[] x;
-    private static double[] y;
-    //private static int z=0;
-
 
     public static void startNewGame(SQLiteJDBC playerDB){
         playerDB.hasPlayed();
@@ -52,6 +45,7 @@ public class NewGame {
 			
 		BorderPane root = new BorderPane();//main layout pane -> Border pane
         root.setPadding(new Insets(5));
+        //SETTING MENU BAR FOR ROOT TOP
         MenuBar menubar = new MenuBar();//create a menu bar
         Menu FileMenu = new Menu("Menu");
         MenuItem New=new MenuItem("new");
@@ -68,6 +62,7 @@ public class NewGame {
         FileMenu.getItems().addAll(New,Save,Exit);
         menubar.getMenus().add(FileMenu);
         root.setTop(menubar);
+        //END OF MENU BAR
 
         //CHANGES
         btn[0] = new Button("P1: Toss");//for Player 1 toss
@@ -75,7 +70,6 @@ public class NewGame {
         btn[1].setDisable(true);//disabled for player 1 to toss first
         btn[0].setOnAction(e->{
             rollDice();
-
             if(play.getText()!="6"){//if toss is not 6 playern1 is disabled and player 2 enabled
                 btn[0].setDisable(true);
                 btn[1].setDisable(false);
@@ -90,8 +84,21 @@ public class NewGame {
             }
         });
 
-        GridPane board = draw();
-        root.setCenter(board);
+        GridPane board = new LudoBoard().draw();
+
+        //MOVEMENT CHANGES
+        Pane pane = new Pane();
+        pane.getChildren().add(board);
+        pane.getChildren().get(0).setLayoutX(100);
+
+        GamePlay.setUp(pane);
+        //END OF MOVEMENT CHANGES
+
+        root.setCenter(pane);
+        root.getCenter().setOnMouseClicked(e -> {
+            System.out.println(e.getX()+","+e.getY());
+        });
+        //root.setCenter(board);
 
 
         HBox lay = new HBox(5);//Hbox layout for toss buttons
@@ -113,9 +120,9 @@ public class NewGame {
 
 
         Scene scene = new Scene(root,800,900);
-        scene.setOnMouseClicked(e -> {
+        /*scene.setOnMouseClicked(e -> {
             System.out.println(e.getX()+","+e.getY());
-        });
+        });*/
 
         Main.window.setScene(scene);
         if(socketName !=null){
@@ -124,9 +131,21 @@ public class NewGame {
         }
 
     }
+
+
+
+    /*private static void overlay(Pane pane) {
+        piece1[0][0] = new Circle(0,0,12,Color.YELLOW);
+        piece1[0][0].setLayoutX(206);
+        piece1[0][0].setLayoutY(121);
+        pane.getChildren().add(piece1[0][0]);
+    }*/
+
     private static void rollDice(){
     Random rand = new Random();
-        dice = rand.nextInt(7);
+        dice = rand.nextInt(6)+1;
+
+        GamePlay.movePiece(dice);
 
         if(socketName!=null)btn[0].setDisable(true);//#serverside_change
 
@@ -161,7 +180,7 @@ public class NewGame {
     public static Button getBtn() {return btn[0]; }
 	
 	
-	public static GridPane draw(){// returns the main ludo  as a Gridpane
+	/*public static GridPane draw(){// returns the main ludo  as a Gridpane
 
         GridPane board = new GridPane();
         board.setPadding(new Insets(30, 10, 10, 10));
@@ -260,7 +279,7 @@ public class NewGame {
         board.setAlignment(Pos.TOP_CENTER);
 
         return board;
-    }
+    }*/
 	
 	
 	
