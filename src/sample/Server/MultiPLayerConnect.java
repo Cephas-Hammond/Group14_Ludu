@@ -1,25 +1,18 @@
 package sample.server;
 
-import javafx.animation.RotateTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.util.Duration;
-import sample.Main;
 import sample.NewGame;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.Socket;
@@ -41,6 +34,7 @@ public class MultiPLayerConnect {
 
         window = new Stage();
         window.setMinWidth(300);
+
         window.initModality(Modality.APPLICATION_MODAL);
 
         Text name = new Text(userName);
@@ -111,7 +105,6 @@ public class MultiPLayerConnect {
         Text connectStatus = new Text("Connecting...");
         connectStatus.setFont(new Font("Rockwell Condensed",25));
 
-        //connectStatus.setText(connectStatus.getText()+".");
         HBox layout = new HBox(connectStatus);
         layout.setSpacing(10);
         layout.setPadding(new Insets(10,5,10,5));
@@ -131,5 +124,7 @@ public class MultiPLayerConnect {
             connectStatus.setText("Failed to connect to server!!");
         }
     }
+
+    public static void disconnect() throws IOException {socket.close();}
 
 }

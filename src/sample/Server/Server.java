@@ -20,7 +20,7 @@ public class Server
 	{ 
 		// server is listening on port 1234 
 		ServerSocket ss = new ServerSocket(1234);
-		final int N_USERS = 4;
+		final int N_USERS = 6;
 
 		System.out.println("Server started.....");
 		

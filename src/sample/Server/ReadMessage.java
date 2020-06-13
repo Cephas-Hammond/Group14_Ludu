@@ -2,6 +2,7 @@ package sample.server;
 
 import javafx.application.Platform;
 import sample.Alert;
+import sample.GamePlay;
 import sample.NewGame;
 
 import java.io.DataInputStream;
@@ -35,7 +36,6 @@ public class ReadMessage extends NewGame implements Runnable {
                 break;
                 //e.printStackTrace();
             }
-            //if(sendMessage.isInterrupted()) sendMessage.start();
         }
     }
 
@@ -51,8 +51,22 @@ public class ReadMessage extends NewGame implements Runnable {
                     Alert.closeAlert();
                     getBtn().setDisable(true);
                 }
+                else if(a.equals("won")){//someone has won
+                    Alert.display("You Lost\n"+ user + " Won");
+                    SQLiteJDBC.haslost();
+                }
                 else if(a.equals("yourTurn")){
                     getBtn().setDisable(false);
+                }
+                else if(a.contains("color")){
+                    try {
+                        int color = Integer.parseInt(a.split(":")[1]);
+                        GamePlay.takenColors[0] = color;
+                        GamePlay.resetColors();
+                        //System.out.println(color);
+                    }catch (Exception e){
+                        e.printStackTrace();
+                    }
                 }
                 else if(a.contains(",")){
                     Alert.showPlayers(a);
@@ -61,6 +75,7 @@ public class ReadMessage extends NewGame implements Runnable {
                     try {
                         int val =  Integer.parseInt(a);
                         getPlay().setText(""+val);
+                        GamePlay.movePiece(val);
                     } catch (NumberFormatException e) {
                         //e.printStackTrace();
                     }

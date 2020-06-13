@@ -15,6 +15,7 @@ class ClientHandler implements Runnable
     private final Socket s;
     boolean isLoggedIn;
     boolean isReady;
+    String color = null;
 
     // constructor
     public ClientHandler(Socket s) throws IOException {
@@ -25,6 +26,7 @@ class ClientHandler implements Runnable
         //OBTAIN INPUT AND OUTPUT STREAMS
         this.dis = new DataInputStream(s.getInputStream());
         this.dos = new DataOutputStream(s.getOutputStream());
+
     }
 
     @Override
@@ -60,6 +62,14 @@ class ClientHandler implements Runnable
                     this.isReady = true;
                     checkReady();
                 }
+                else if(MsgToSend.contains("color")){
+                    color = MsgToSend.split(":")[1];
+                    for (ClientHandler client : Server.clients) {
+                        if (!client.name.equals(sender) && client.isLoggedIn) {
+                            client.dos.writeUTF(received);
+                        }
+                    }
+                }
                 // SEND TO ALL CLIENTS EXCEPT SENDER
                 else{
                     for (ClientHandler client : Server.clients) {
@@ -68,13 +78,10 @@ class ClientHandler implements Runnable
                         }
                     }
 
-                    if (MsgToSend.equals("6")){
-                        Server.clients.get(Server.turnIndex).dos.writeUTF("yourTurn#"+sender);
+                    if (!MsgToSend.equals("6")) {
+                        Server.turnIndex = (Server.turnIndex + 1) % Server.clients.size();
                     }
-                    else{
-                        Server.turnIndex = (Server.turnIndex +1)%Server.clients.size();
-                        Server.clients.get(Server.turnIndex).dos.writeUTF("yourTurn#"+sender);
-                    }
+                    Server.clients.get(Server.turnIndex).dos.writeUTF("yourTurn#"+sender);
                 }
             } catch (IOException e) {
                 //I/O STREAM TO PLAYER IS HITS DEAD END (PLAYER NOT RESPONDING)
@@ -100,7 +107,7 @@ class ClientHandler implements Runnable
         StringBuilder playerNames = new StringBuilder();
         int size = Server.clients.size();
         for (int i=0;i<size;i++) {
-            playerNames.append(Server.clients.get(i).name);
+            playerNames.append(Server.clients.get(i).name +"]"+ Server.clients.get(i).color);
             if(i<(size-1)) playerNames.append(",");
         }
         //SEND NAMES TO ALL PLAYERS

@@ -4,40 +4,40 @@ import java.sql.*;
 
 public class SQLiteJDBC {
 
-   private Connection db;
-   private Statement stmt;
+   private static Connection db;
+   private static Statement stmt;
    private static ResultSet rs;
 
-   private String userName;
-   private String id;
-   private int games;
-   private int  wins;
-   private int losses;
+   private static String userName;
+   private static String id;
+   private static int games;
+   private static int  wins;
+   private static int losses;
 
    //SETTERS AND GETTERS
-   public String getId() {
+   public static String getId() {
       return id;
    }
 
-   public int getGames() {
+   public static int getGames() {
       return games;
    }
 
-   public int getWins() {
+   public static int getWins() {
       return wins;
    }
 
-   public int getLosses() {
+   public static int getLosses() {
       return losses;
    }
 
-   public String getUserName() {
+   public static String getUserName() {
       return userName;
    }
 
 
    //CONSTRUCTOR
-   public SQLiteJDBC(String name) {
+   public static void startDB(String name) {
 
       db = null;
       stmt = null;
@@ -55,21 +55,21 @@ public class SQLiteJDBC {
    }
 
    //DB_CONNECT
-   public void dbConnect(String dbName) throws SQLException, ClassNotFoundException {
+   private static void dbConnect(String dbName) throws SQLException, ClassNotFoundException {
       Class.forName("org.sqlite.JDBC");
       db = DriverManager.getConnection("jdbc:sqlite:"+dbName+".db");
-      System.out.println("Opened database successfully");
+      //System.out.println("Opened database successfully");
       stmt = db.createStatement();
    }
 
-   public void loadUser() {
+   public static void loadUser() {
       if(db==null){
          loadUserNoDB();
          return;
       }
       try {
          rs = stmt.executeQuery( "SELECT * FROM USERS WHERE USERNAME ='"+userName+"';");
-         System.out.println("Load user successful");
+         //System.out.println("Load user successful");
 
          id = rs.getString("id");
          //userName = rs.getString("username");
@@ -93,28 +93,27 @@ public class SQLiteJDBC {
       }
    }
 
-   public void loadUserNoDB(){
+   private static void loadUserNoDB(){
       id = "p_"+userName+"145";
       games  = 0;
       wins = 0;
       losses = 0;
    }
 
-   public void dbInsField(String id, String name, int g, int win, int loss) {
+   public static void dbInsField(String id, String name, int g, int win, int loss) {
 
       try{
          String sql = "INSERT INTO USERS (ID,USERNAME,GAMES,WINS,LOSSES) " +
                  "VALUES ('"+id+"', '"+name+"', "+g+","+ win +","+ loss +");";
-         System.out.println(id);
+         //System.out.println(id);
          stmt.executeUpdate(sql);
-         //db.commit();
-         System.out.println("Records created successfully");
+         //System.out.println("Records created successfully");
       } catch (SQLException throwables) {
          throwables.printStackTrace();
       }
    }
 
-   public void dbCrtUserTb() throws SQLException {
+   private static void dbCrtUserTb() throws SQLException {
       String sql = "CREATE TABLE USERS (" +
               " ID TEXT PRIMARY KEY  NOT NULL," +
               " USERNAME TEXT NOT NULL, " +
@@ -123,59 +122,60 @@ public class SQLiteJDBC {
               " LOSSES INT)";
 
       stmt.executeUpdate(sql);
-      System.out.println("Table created successfully");
+      //System.out.println("Table created successfully");
    }
 
    //DB UPDATE OPERATIONS
-   public void hasPlayed() {
+   public static void hasPlayed() {
       games++;
       update("GAMES",games);//WRITE TO DB
    }
-   public void hasWon(){
+   public static void hasWon(){
       wins++;
       update("WINS",wins);
+      //System.out.println(wins);
    }
-   public void haslost(){
+   public static void haslost(){
       losses++;
       update("LOSSES",losses);
+      //System.out.println(losses);
    }
-   public void setUserName(String name) {
+   public static void setUserName(String name) {
       if(!userName.equals(name)){
-         this.userName = name;
+         userName = name;
          update("USERNAME",userName);
       }
    }
    //HANDLE DUPLICATE USERNAME ERROR
 
-   private void update(String key, String value) {
+   private static void update(String key, String value) {
       if(db==null)return;
          try{
             String sql = "UPDATE USERS SET "+ key +" = '"+value+"' WHERE ID='"+ id +"';";
             stmt.executeUpdate(sql);
             //db.commit();
-            System.out.println("Update Successful");
+            //System.out.println("Update Successful");
          } catch (SQLException throwables) {
             throwables.printStackTrace();
          }
    }
 
-   private  void update(String key, int value){
+   private static  void update(String key, int value){
       if(db==null)return;
       try{
          String sql = "UPDATE USERS SET "+ key +"= "+value+" WHERE ID='"+ id +"';";
          stmt.executeUpdate(sql);
          //db.commit();
-         System.out.println("Update Successful");
+         //System.out.println("Update Successful");
       } catch (SQLException throwables) {
          throwables.printStackTrace();
       }
    }
 
-   public void delete() {
+   public static void delete() {
       if(db==null)return;
       try {
          stmt.close();
-         rs.close();
       } catch (SQLException throwables) {
          throwables.printStackTrace();
       }finally {

@@ -1,14 +1,19 @@
 package sample;
+/*
+Second Semester, 2020
+CPEN 312: OOP with Java
+Final Project : Group 14, Project 5
+Nudze Grace
+Cephas Hammond
+Baron Afutu
+ */
 
 import com.sun.xml.internal.ws.api.ResourceLoader;
 import javafx.application.Application;
 //import javafx.fxml.FXMLLoader;
-import javafx.event.Event;
-import javafx.geometry.HPos;
+import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-//import javafx.scene.Parent;
-import javafx.geometry.VPos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -19,22 +24,17 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
-import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import sample.server.MultiPLayerConnect;
 import sample.server.SQLiteJDBC;
-
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.time.Duration;
-import java.util.Timer;
 
 public class Main extends Application {
 
     static Stage window;
+    static Scene mainMenu;
     private String userName;
-    private SQLiteJDBC playerDB;
 
     @Override
     public void start(Stage primaryStage) throws Exception{
@@ -44,7 +44,7 @@ public class Main extends Application {
         primaryStage.show();*/
 
         window = primaryStage;
-        window.setOnCloseRequest(e-> playerDB.delete());
+        window.setOnCloseRequest(e-> SQLiteJDBC.delete());
 
         window.setTitle("Ludu 1.0");
 
@@ -55,23 +55,22 @@ public class Main extends Application {
         setFont(welcomeText);
 
         //NEW GAME BUTTON
-        //System.out.println(getClass().getClassLoader().getResourceAsStream("newGame1.png"));
         Image newGameImage = new Image(getClass().getClassLoader().getResourceAsStream("newGame1.png"));
         //Image newGameImage = new Image(new FileInputStream("src\\sample\\resources\\newGame1.png"));
         ImageView newGameIcon = new ImageView(newGameImage);
 
         Button newGame = new Button("Single Game",newGameIcon);
-        newGame.setOnAction(e-> NewGame.startNewGame(playerDB));
+        newGame.setOnAction(e-> NewGame.startNewGame());
         newGame.setFont(new Font("Rockwell Condensed",20));
 
-        //MULTIPLAY BUTTON
+        //MULTI PLAY BUTTON
         //Image multiplayer = new Image(new FileInputStream("src\\sample\\resources\\multiplay1.png"));
         Image multiplayer = new Image(getClass().getClassLoader().getResourceAsStream("multiplay1.png"));
         ImageView multiplayerIcon = new ImageView(multiplayer);
 
         Button multiPlay = new Button("Multiplayer",multiplayerIcon);
         multiPlay.setOnAction(e->{
-            if(MultiPLayerConnect.display(userName, playerDB.getId()))NewGame.startNewGame(playerDB);
+            if(MultiPLayerConnect.display(userName, SQLiteJDBC.getId()))NewGame.startNewGame();
         });
         multiPlay.setFont(new Font("Rockwell Condensed",20));
 
@@ -81,7 +80,7 @@ public class Main extends Application {
         ImageView profileIcon = new ImageView(profile);
 
         Button profileBtn = new Button("Profile",profileIcon);
-        profileBtn.setOnAction(e->Stat.display(window, playerDB));
+        profileBtn.setOnAction(e->Stat.display(window));
         profileBtn.setFont(new Font("Rockwell Condensed",20));
 
 
@@ -101,9 +100,10 @@ public class Main extends Application {
 
         window.setScene(scene1);
         window.show();
+        mainMenu = scene1;
 
-        //requestUserName(welcomeText);
-        playerDB = new SQLiteJDBC(userName);
+        /*/requestUserName(welcomeText);
+        playerDB = new SQLiteJDBC(userName);*/
     }
 
     private void setBackground(BorderPane layout) throws FileNotFoundException {
@@ -156,6 +156,10 @@ public class Main extends Application {
         accept.setOnAction(e->{
             if(!userNameField.getText().equals("")){
                 userName = userNameField.getText();
+
+                //requestUserName(welcomeText);
+                SQLiteJDBC.startDB(userName);
+
                 stage.close();
                 welcomeText.setText("Welcome, "+userName);
             }
@@ -164,6 +168,10 @@ public class Main extends Application {
             if (e.getCode().getName().equals("Enter") &&
                     !userNameField.getText().equals("")){
                 userName = userNameField.getText();
+
+                //requestUserName(welcomeText);
+                SQLiteJDBC.startDB(userName);
+
                 stage.close();
                 welcomeText.setText("Welcome, "+userName);
             }

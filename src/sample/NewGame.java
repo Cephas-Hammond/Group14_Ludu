@@ -2,16 +2,18 @@ package sample;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
+import sample.server.MultiPLayerConnect;
 import sample.server.ReadMessage;
 import sample.server.SQLiteJDBC;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -28,45 +30,69 @@ public class NewGame {
     private static int dice;
     //private static Button btn; //#serverside_change
     private static Button[] btn = new Button[2];
+    private static MenuItem Exit2;
+
+    //player indicators
+    private static HBox indication = new HBox(10);
+
+    private static Color colors[] = new Color[4];
+
+    public static Rectangle playerColor;
+    public static Text playerNum;
 
 
-    public static void startNewGame(SQLiteJDBC playerDB){
-        playerDB.hasPlayed();
-		Scene prevScene = Main.window.getScene();
-        
+    public static void startNewGame(){
+        SQLiteJDBC.hasPlayed();
+
         Label text = new Label("This is a new Game");
 
         
         play = new Text();
-        /*btn = new Button("Toss");
-        btn.setOnAction(e->{
-            rollDice();
-            });*/
+
 			
 		BorderPane root = new BorderPane();//main layout pane -> Border pane
-        root.setPadding(new Insets(5));
+        root.setPadding(new Insets(0,0,0,0));
+
         //SETTING MENU BAR FOR ROOT TOP
         MenuBar menubar = new MenuBar();//create a menu bar
         Menu FileMenu = new Menu("Menu");
         MenuItem New=new MenuItem("new");
         New.setOnAction(e->{
-            NewGame.startNewGame(playerDB);//starts a  new game
+            NewGame.startNewGame();//starts a  new game
         });
         MenuItem Save=new MenuItem("Save");
-
         MenuItem Exit=new MenuItem("Exit");
-        Exit.setOnAction(e->{
-            Main.window.setScene(prevScene);//exit to Main screen
-        });
-        
-        FileMenu.getItems().addAll(New,Save,Exit);
+        Exit.setOnAction(e->Main.window.setScene(Main.mainMenu));
+
+        VBox vBox = new VBox(20);
+        vBox.setMinHeight(100);
+        vBox.setMaxHeight(100);
+        vBox.setPrefHeight(100);
+        vBox.setPrefWidth(800);
+        vBox.setMaxWidth(800);
+
+        FileMenu.getItems().removeAll(FileMenu.getItems());
+        FileMenu.getItems().addAll(New,Save);
+
+        if(FileMenu.getItems().contains(Exit) || FileMenu.getItems().contains(Exit2))FileMenu.getItems().remove(3);
+
+        if(socketName == null){
+            FileMenu.getItems().add(Exit);
+        }
+        else{
+            FileMenu.getItems().add(Exit2);
+        }
+
+
         menubar.getMenus().add(FileMenu);
-        root.setTop(menubar);
+
+        vBox.getChildren().add(menubar);
+        vBox.getChildren().add(indication);
+        root.setTop(vBox);
         //END OF MENU BAR
 
-        //CHANGES
-        btn[0] = new Button("P1: Toss");//for Player 1 toss
-        btn[1] = new Button("P2: Toss");// for player 2 toss
+                btn[0] = new Button("TOSS");//for Player 1 toss
+        btn[1] = new Button("P2: TOSS");// for player 2 toss
         btn[1].setDisable(true);//disabled for player 1 to toss first
         btn[0].setOnAction(e->{
             rollDice();
@@ -91,14 +117,10 @@ public class NewGame {
         pane.getChildren().add(board);
         pane.getChildren().get(0).setLayoutX(100);
 
-        GamePlay.setUp(pane);
+        GamePlay.setUp(pane,socketName);
         //END OF MOVEMENT CHANGES
 
         root.setCenter(pane);
-        root.getCenter().setOnMouseClicked(e -> {
-            System.out.println(e.getX()+","+e.getY());
-        });
-        //root.setCenter(board);
 
 
         HBox lay = new HBox(5);//Hbox layout for toss buttons
@@ -106,23 +128,33 @@ public class NewGame {
         lay.getChildren().add(btn[0]);//adds buttons to horizontal box
 
         if(socketName==null){
+            btn[0].setText("P1: TOSS");
             lay.getChildren().add(btn[1]);//adds buttons to horizontal box
         }
 
+        Rectangle die = new Rectangle(30,30,Color.WHITESMOKE);
+        die.setStroke(Color.BLACK);
+        Pane diePane = new Pane();
+        diePane.getChildren().addAll(die,play);
+        die.setLayoutX(370);
+        die.setLayoutY(0);
+        play.setLayoutX(380);
+        play.setLayoutY(20);
+
         VBox layout = new VBox(10);//vbox for arrangement
-        layout.getChildren().addAll(text,lay,play);
-        layout.setPrefHeight(300);
+        layout.getChildren().addAll(lay,diePane);
+        layout.setPadding(new Insets(20));
         layout.setAlignment(Pos.CENTER);
         root.setBottom(layout);
 
-        //END OF CHANGES
-        
-
+        Image gameScreenBack = new Image(NewGame.class.getClassLoader().getResourceAsStream("finalBack.png"));
+        ImageView gameScreenBackImage = new ImageView(gameScreenBack);
+        root.setBackground(new Background(new BackgroundImage(gameScreenBack, BackgroundRepeat.NO_REPEAT,
+                                                                BackgroundRepeat.NO_REPEAT,
+                                                                BackgroundPosition.DEFAULT,
+                                                                BackgroundSize.DEFAULT)));
 
         Scene scene = new Scene(root,800,900);
-        /*scene.setOnMouseClicked(e -> {
-            System.out.println(e.getX()+","+e.getY());
-        });*/
 
         Main.window.setScene(scene);
         if(socketName !=null){
@@ -130,22 +162,20 @@ public class NewGame {
             sendMessage("findPlayers");
         }
 
+        playerNum = new Text("Player " + (GamePlay.getTurn()+1)+":");
+        Main.setFont(playerNum);
+        Text playerName = new Text(socketName);
+        Main.setFont(playerName);
+        playerColor = new Rectangle(25,25,GamePlay.getColorPosition());
+        playerColor.setStroke(Color.BLACK);
+        indication.getChildren().removeAll(indication.getChildren());
+        indication.getChildren().addAll(playerNum,playerName,playerColor);
+        indication.setAlignment(Pos.CENTER);
     }
-
-
-
-    /*private static void overlay(Pane pane) {
-        piece1[0][0] = new Circle(0,0,12,Color.YELLOW);
-        piece1[0][0].setLayoutX(206);
-        piece1[0][0].setLayoutY(121);
-        pane.getChildren().add(piece1[0][0]);
-    }*/
 
     private static void rollDice(){
     Random rand = new Random();
         dice = rand.nextInt(6)+1;
-
-        GamePlay.movePiece(dice);
 
         if(socketName!=null)btn[0].setDisable(true);//#serverside_change
 
@@ -172,118 +202,19 @@ public class NewGame {
                 break;
         }
         if(socketName!=null)sendMessage(play.getText());
+        GamePlay.movePiece(dice);
     }
     public static int getDice(){
         return dice;
     }
 
-    public static Button getBtn() {return btn[0]; }
+    public static Button getBtn() {return btn[0];}
+
+    public static String getSocketName() {return socketName;}
+
 	
 	
-	/*public static GridPane draw(){// returns the main ludo  as a Gridpane
 
-        GridPane board = new GridPane();
-        board.setPadding(new Insets(30, 10, 10, 10));
-        board.setVgap(5);
-        board.setHgap(5);
-
-        for(int i =1; i<=5;i++){//blue house row index
-            for(int j = 5; j<8;j++){//column index
-                Circle circle = new Circle();
-                circle.setRadius(15);
-                circle.setFill(Color.TRANSPARENT);
-                circle.setStroke(Color.BLACK);
-                if(i > 1 && j == 6){
-                    circle.setFill(Color.BLUE);
-                }
-                if(i ==2 && j == 7){
-                    circle.setFill(Color.BLUE);
-                }
-                board.add(circle, j, i);
-            }
-        }
-
-
-        for(int i = 6; i<9;i++){//yellow house row index
-            for(int j = 1;j<=5;j++){//column index
-                Circle circle = new Circle();
-                circle.setRadius(15);
-                circle.setFill(Color.TRANSPARENT);
-                circle.setStroke(Color.BLACK);
-                if(i == 7 && j > 1){
-                    circle.setFill(Color.YELLOW);
-                }
-                if(i == 6  && j ==2 ){
-                    circle.setFill(Color.YELLOW);
-                }
-                board.add(circle, j, i);
-            }
-        }
-
-        // pawns for the yellow house
-        for(int i = 3;i <5;i++){
-            for(int j = 1;j<3;j++  ){
-                Circle box = new Circle();
-                box.setRadius(12);
-                box.setFill(Color.YELLOW);
-                box.setStroke(Color.BLACK);
-                board.add(box, j, i);
-
-            }
-        }
-
-        for(int i =10; i<15;i++){//red house
-            for(int j = 5; j<8;j++){
-                Circle circle = new Circle();
-                circle.setRadius(15);
-                circle.setFill(Color.TRANSPARENT);
-                circle.setStroke(Color.BLACK);
-                if(i > 10 && j == 6){
-                    circle.setFill(Color.RED);
-                }
-                if(i ==13 && j == 5){
-                    circle.setFill(Color.RED);
-                }
-                board.add(circle, j, i);
-            }
-        }
-
-        for(int i = 6; i<9;i++){//green house
-            for(int j = 7;j<12;j++){
-                Circle circle = new Circle();
-                circle.setRadius(15);
-                circle.setFill(Color.TRANSPARENT);
-                circle.setStroke(Color.BLACK);
-                if(i == 7 && j < 11){
-                    circle.setFill(Color.GREEN);
-                }
-                if(i == 8  && j ==10 ){
-                    circle.setFill(Color.GREEN);
-                }
-                board.add(circle, j, i);
-            }
-        }
-
-        //Pawns for green house
-        for(int i = 12;i <14;i++){
-            for(int j = 9;j<11;j++  ){
-                Circle box = new Circle();
-                box.setRadius(12);
-                box.setFill(Color.GREEN);
-                box.setStroke(Color.BLACK);
-                board.add(box, j, i);
-
-            }
-        }
-
-        board.setAlignment(Pos.TOP_CENTER);
-
-        return board;
-    }*/
-	
-	
-	
-	
 	
 	
 	
@@ -307,6 +238,8 @@ public class NewGame {
                     //TELL OTHER USERS OF EXIT
                     sendMessage("out");
                     Thread.sleep(500);
+                    dis.close();
+                    dos.close();
                     s.close();
                     Thread.yield();
                 } catch (IOException | InterruptedException ioException) {
@@ -314,13 +247,26 @@ public class NewGame {
                     Main.window.close();
                 }
             });
+            Exit2 = new MenuItem("Exit");
+            Exit2.setOnAction(e->{
+                try {
+                    //TELL OTHER USERS OF EXIT
+                    sendMessage("out");
+                    Thread.sleep(500);
+                    dis.close();
+                    dos.close();
+                    s.close();
+                    socketName=null;
+                    Thread.yield();
+                    Main.window.setScene(Main.mainMenu);//exit to Main screen
+                    Main.window.setOnCloseRequest(f->Main.window.close());
+                } catch (IOException | InterruptedException ioException) {
+                    ioException.printStackTrace();
+                }
+            });
 
             //Thread sendMsgThread = new Thread(new SendMessage());
             Thread readMsgThread = new Thread(new ReadMessage(s,dis));
-
-            //Start threads here
-            //sendMessage.start();
-            //sendMsgThread.start();
 
             //NO THREAD FOR SENDING MESSAGES
             sendMessage(socketName);
@@ -346,6 +292,25 @@ public class NewGame {
                 e.printStackTrace();//comment line out
             }
         }
+    }
+
+    static void ExitGame() {
+        if(socketName!=null) {
+            try {
+                //TELL OTHER USERS OF EXIT
+                sendMessage("out");
+                Thread.sleep(500);
+                dis.close();
+                dos.close();
+                MultiPLayerConnect.disconnect();
+                socketName = null;
+                Thread.yield();
+                Main.window.setScene(Main.mainMenu);//exit to Main screen
+            } catch (IOException | InterruptedException ioException) {
+                ioException.printStackTrace();
+            }
+        }
+        Main.window.setScene(Main.mainMenu);
     }
 }
 

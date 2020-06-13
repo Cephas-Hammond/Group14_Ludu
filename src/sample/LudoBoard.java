@@ -1,12 +1,16 @@
 package sample;
 
-
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
-
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
-
+import javafx.scene.paint.CycleMethod;
+import javafx.scene.paint.LinearGradient;
+import javafx.scene.paint.Stop;
 import javafx.scene.shape.Circle;
-
+import javafx.scene.shape.Polygon;
+import javafx.scene.shape.Rectangle;
 import javafx.geometry.*;
 
 
@@ -15,10 +19,65 @@ public class LudoBoard {
     public GridPane draw(){// returns the main ludo interface
 
         GridPane board = new GridPane();
-        //board.setGridLinesVisible(true);
+
         board.setPadding(new Insets(30, 10, 10, 10));
         board.setVgap(3);
         board.setHgap(3);
+
+        //Design for yellow house
+
+        Circle yello = new Circle(0,0,105);
+        yello.setFill(Color.YELLOW);
+        yello.setStroke(Color.BLACK);
+
+        board.add(yello, 0,0,7,7);
+
+       
+        // Rectangle yellowhite = new Rectangle(0,0,135,140);
+        Circle yellowhite = new Circle(0,0,68);
+        yellowhite.setFill(Color.WHITE);
+        yellowhite.setStroke(Color.BLACK);
+        board.add(yellowhite,1,1,6,6);
+
+        //Design for blue house
+        
+        // Rectangle blu = new Rectangle(0,0,210,210);
+        Circle blu = new Circle(0,0,105);
+        blu.setFill(Color.BLUE);
+        blu.setStroke(Color.BLACK);
+        board.add(blu, 9,0,7,7);
+
+        //Rectangle bluwhite = new Rectangle(0,0,135,140);
+        Circle bluwhite = new Circle(0,0,68);
+        bluwhite.setFill(Color.WHITE);
+        bluwhite.setStroke(Color.BLACK);
+        board.add(bluwhite,10,1,6,6);
+
+        //Design for green house
+        //Rectangle green = new Rectangle(0,0,210,210);
+        Circle green = new Circle(0,0,105);
+        green.setFill(Color.GREEN);
+        green.setStroke(Color.BLACK);
+        board.add(green, 9,10,7,7);
+
+        //Rectangle greenwhite = new Rectangle(0,0,135,140);
+        Circle greenwhite = new Circle(0,0,68);
+        greenwhite.setFill(Color.WHITE);
+        greenwhite.setStroke(Color.BLACK);
+        board.add(greenwhite,10,10,6,6);
+
+        //Design for red house
+        //Rectangle red = new Rectangle(0,0,210,210);
+        Circle red = new Circle(0,0,105);
+        red.setFill(Color.RED);
+        red.setStroke(Color.BLACK);
+        board.add(red, 0,10,7,7);
+
+        //Rectangle redwhite = new Rectangle(0,0,135,140);
+        Circle redwhite = new Circle(0,0,68);
+        redwhite.setFill(Color.WHITE);
+        redwhite.setStroke(Color.BLACK);
+        board.add(redwhite,1,10,6,6);
 
         for(int i =1; i<=6;i++){//blue house row index
             for(int j = 6; j<=8;j++){//column index
@@ -52,19 +111,30 @@ public class LudoBoard {
                 board.add(circle, j, i);
             }
         }
+        //StackPane stack = new StackPane();
 
-        // pawns for the yellow house
-        for(int i = 3;i <5;i++){
-            for(int j = 1;j<3;j++  ){
-        Circle box = new Circle();
-        box.setRadius(12);
-        box.setFill(Color.YELLOW);
-        box.setStroke(Color.BLACK);
-        board.add(box, j, i);
-        GridPane.setHalignment(box, HPos.CENTER);
+        //center 
 
-            }
-        }
+        Stop[] stops = new Stop[] { new Stop(0, Color.YELLOW), new Stop(1, Color.RED)};  
+        LinearGradient linear = new LinearGradient(0, 0, 1, 0, true, CycleMethod.NO_CYCLE, stops);
+
+        Image center = new Image(getClass().getClassLoader().getResourceAsStream("center1.png"));
+        ImageView centerImage = new ImageView(center);
+        Polygon octahome = new Polygon();
+        octahome.getPoints().addAll(0.0,10.0,
+                20.0,0.0,
+                85.0,0.0,
+                105.0,10.0,
+                105.0,85.0,
+                85.0,95.0,
+                20.0,95.0,
+                0.0,85.0);
+        octahome.setFill(linear);
+        octahome.setStroke(Color.BLACK);
+        board.add(centerImage,6,6,5,5);
+        centerImage.setFitWidth(110);
+        centerImage.setPreserveRatio(true);
+
 
         for(int i =10; i<=15;i++){//red house
             for(int j = 6; j<=8;j++){
@@ -72,7 +142,7 @@ public class LudoBoard {
             circle.setRadius(17);
             circle.setFill(Color.LIGHTSLATEGRAY);
             circle.setStroke(Color.BLACK);
-            if(i < 15 && j == 7){//CHANGE EFFECTED HERE
+            if(i<15 && j == 7){
                 circle.setFill(Color.RED);
             }
             if(i ==14 && j == 6){
@@ -95,19 +165,6 @@ public class LudoBoard {
                     circle.setFill(Color.GREEN);
                 }
                 board.add(circle, j, i);
-            }
-        }
-
-        //Pawns for green house
-        for(int i = 12;i <=13;i++){
-            for(int j = 12;j<=13;j++  ){
-        Circle box = new Circle();
-        box.setRadius(12);
-        box.setFill(Color.GREEN);
-        box.setStroke(Color.BLACK);
-        board.add(box, j, i);
-        GridPane.setHalignment(box, HPos.CENTER);
-
             }
         }
        
